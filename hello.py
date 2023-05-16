@@ -2,9 +2,10 @@ from flask import Flask, render_template, flash, request
 from  flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, EqualTo, Length
+from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate 
-from datetime import datetime
+from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Create a Flask Instance
@@ -14,6 +15,20 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456@localhost:
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.app_context().push()
+
+# Json Thing
+# @app.route('/date')
+# def get_current_date():
+#     return {"Date": date.today()}
+
+#Create a Blog Post Model
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255))
+    content = db.Column(db.Text)
+    author = db.Column(db.String(255))
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    slug = db.Column(db.String(255))
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +69,39 @@ class PasswordForm(FlaskForm):
 class NameForm(FlaskForm):
     name = StringField("What's your Name?", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+class PostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    content = StringField("Content",validators=[DataRequired()], widget=TextArea() )
+    author = StringField("Author", validators=[DataRequired()])
+    slug = StringField("slug", validators=[DataRequired()])
+    submit = SubmitField("Submit", )
+
+@app.route('/posts')
+def posts():
+    # Grab all the posts from the database
+    posts = Posts.query.order_by(Posts.date_posted)
+    return render_template("posts.html", posts=posts)
+
+#Add Post Page
+@app.route('/add_post', methods=['GET', 'POST'])
+def add_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Posts(title=form.title.data, content=form.content.data, author=form.author.data, slug=form.slug.data)
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+
+        #Add post data to database
+        db.session.add(post)
+        db.session.commit()
+
+        #Return a Message
+        flash("Blog Post Submitted Successfully")
+    #Redirect to the webpage
+    return render_template("add_post.html", form=form)    
 
 # def index():
 #    return "<h1>Hello World!</h1>"
