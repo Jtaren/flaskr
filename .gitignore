@@ -1,2 +1,4 @@
 .venv
 migrations
+.gitignore
+env
