@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Create a Flask Instance
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "my secret key no one should know"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456@localhost:5432/blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.app_context().push()
